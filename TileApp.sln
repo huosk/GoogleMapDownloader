@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30804.86
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CopyTileApp", "CopyTileApp\CopyTileApp.csproj", "{E836EFE5-DF0D-4B53-9D25-9EBF93150C75}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TileDownloader", "TileDownloader\TileDownloader.csproj", "{6E18CBD9-45D2-4161-A365-53F4EAE9D037}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E836EFE5-DF0D-4B53-9D25-9EBF93150C75}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E836EFE5-DF0D-4B53-9D25-9EBF93150C75}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E836EFE5-DF0D-4B53-9D25-9EBF93150C75}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E836EFE5-DF0D-4B53-9D25-9EBF93150C75}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6E18CBD9-45D2-4161-A365-53F4EAE9D037}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6E18CBD9-45D2-4161-A365-53F4EAE9D037}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6E18CBD9-45D2-4161-A365-53F4EAE9D037}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6E18CBD9-45D2-4161-A365-53F4EAE9D037}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {21D56C43-8E1D-4C25-9F36-9CAF5C9EAAE4}
+	EndGlobalSection
+EndGlobal
