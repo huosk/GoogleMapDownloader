@@ -53,6 +53,19 @@ namespace TileDownloader
         public IEnumerable<int> tileIds { get; set; }
     }
 
+    public struct QueryElement
+    {
+        public double longitude;
+        public double latitude;
+        public int lod;
+        public double south;
+        public double west;
+        public double north;
+        public double east;
+        public int xTile;
+        public int yTile;
+    }
+
     class Program
     {
         const string symbol_x = "{x}";
@@ -104,7 +117,7 @@ namespace TileDownloader
 
         private static void HandleQuery(QueryOption options)
         {
-            List<TileKey> tiles = new List<TileKey>();
+            List<QueryElement> tiles = new List<QueryElement>();
 
             double[] positions = options.positions.ToArray();
             int[] tileIds = options.tileIds.ToArray();
@@ -118,7 +131,24 @@ namespace TileDownloader
                     int lod = Convert.ToInt32(positions[i + 2]);
 
                     var t = TileUtil.LatLongToTile(lat, lon, lod);
-                    tiles.Add(t);
+
+                    double south_, north_, west_, east_;
+
+                    TileUtil.TileToLatLon(t.WestBound, t.NorthBound, t.Lod, out north_, out east_);
+                    TileUtil.TileToLatLon(t.EastBound, t.SouthBound, t.Lod, out south_, out west_);
+
+                    tiles.Add(new QueryElement()
+                    {
+                        latitude = lat,
+                        longitude = lon,
+                        xTile = t.X,
+                        yTile = t.Y,
+                        lod = t.Lod,
+                        south = south_,
+                        north = north_,
+                        west = west_,
+                        east = east_
+                    });
                 }
             }
 
@@ -130,7 +160,28 @@ namespace TileDownloader
                     int tileY = tileIds[i + 1];
                     int tileLod = tileIds[i + 2];
 
-                    tiles.Add(new TileKey(tileX, tileY, tileLod));
+                    TileKey t = new TileKey(tileX, tileY, tileLod);
+
+                    double lat_, lon_;
+                    TileUtil.TileToLatLon(t.X, t.Y, t.Lod, out lat_, out lon_);
+
+                    double south_, north_, west_, east_;
+
+                    TileUtil.TileToLatLon(t.WestBound, t.NorthBound, t.Lod, out north_, out east_);
+                    TileUtil.TileToLatLon(t.EastBound, t.SouthBound, t.Lod, out south_, out west_);
+
+                    tiles.Add(new QueryElement()
+                    {
+                        latitude = lat_,
+                        longitude = lon_,
+                        xTile = tileX,
+                        yTile = tileY,
+                        lod = tileLod,
+                        south = south_,
+                        north = north_,
+                        west = west_,
+                        east = east_
+                    });
                 }
             }
 
@@ -152,28 +203,18 @@ namespace TileDownloader
 
             for (int i = 0; i < tiles.Count; i++)
             {
-                double lon_ = 0.0;
-                double lat_ = 0.0;
-                double south_ = 0.0;
-                double west_ = 0.0;
-                double north_ = 0.0;
-                double east_ = 0.0;
-
-                TileUtil.TileToLatLon(tiles[i].X, tiles[i].Y, tiles[i].Lod, out lat_, out lon_);
-
-                TileUtil.TileToLatLon(tiles[i].WestBound, tiles[i].NorthBound, tiles[i].Lod, out north_, out east_);
-                TileUtil.TileToLatLon(tiles[i].EastBound, tiles[i].SouthBound, tiles[i].Lod, out south_, out west_);
+                var t = tiles[i];
 
                 outputBuilder.Append((i + 1).ToString().PadRight(10));
-                outputBuilder.Append(lon_.ToString("f5").PadRight(12));
-                outputBuilder.Append(lat_.ToString("f5").PadRight(12));
-                outputBuilder.Append(tiles[i].X.ToString().PadRight(10));
-                outputBuilder.Append(tiles[i].Y.ToString().PadRight(10));
-                outputBuilder.Append(tiles[i].Lod.ToString().PadRight(6));
-                outputBuilder.Append(east_.ToString("f5").PadRight(10));
-                outputBuilder.Append(south_.ToString("f5").PadRight(10));
-                outputBuilder.Append(west_.ToString("f5").PadRight(10));
-                outputBuilder.Append(north_.ToString("f5").PadRight(10));
+                outputBuilder.Append(t.longitude.ToString("f5").PadRight(12));
+                outputBuilder.Append(t.latitude.ToString("f5").PadRight(12));
+                outputBuilder.Append(t.xTile.ToString().PadRight(10));
+                outputBuilder.Append(t.yTile.ToString().PadRight(10));
+                outputBuilder.Append(t.lod.ToString().PadRight(6));
+                outputBuilder.Append(t.east.ToString("f5").PadRight(10));
+                outputBuilder.Append(t.south.ToString("f5").PadRight(10));
+                outputBuilder.Append(t.west.ToString("f5").PadRight(10));
+                outputBuilder.Append(t.north.ToString("f5").PadRight(10));
 
                 outputBuilder.AppendLine();
             }
