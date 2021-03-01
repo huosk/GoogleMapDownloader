@@ -327,6 +327,12 @@ namespace TileDownloader
             }
         }
 
+        private static string FindCurlFile()
+        {
+            string curl = Environment.Is64BitProcess ? "curl\\x64\\curl.exe" : "curl\\x86\\curl.exe";
+            return System.IO.Path.GetFullPath(curl);
+        }
+
         private static async Task LoadKey(TileKey key)
         {
             try
@@ -374,7 +380,7 @@ namespace TileDownloader
                 argument.Append($"\"{address.ToString()}\"");
 
                 Process curl = new Process();
-                curl.StartInfo.FileName = "curl";
+                curl.StartInfo.FileName = FindCurlFile();
                 curl.StartInfo.Arguments = argument.ToString();
                 curl.StartInfo.UseShellExecute = false;
                 curl.StartInfo.CreateNoWindow = true;
