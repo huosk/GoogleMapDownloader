@@ -78,6 +78,8 @@ namespace TileDownloader
         const string symbol_center_lat = "{center_lat}";
         const string symbol_center_lon = "{center_lon}";
 
+        const string DEFAULT_OUTPUT = @"{0}\Download\{z}\{x}\{y}.jpg";
+
         static int maxTaskCount = 32;
         static int taskIndex = 0;
         static int taskCount = 0;
@@ -242,12 +244,13 @@ namespace TileDownloader
             output = options.output;
             if (string.IsNullOrEmpty(output))
             {
-                output = string.Format(@"{0}\Download\{z}\{x}\{y}.jpg", Environment.CurrentDirectory);
+                output = string.Format(DEFAULT_OUTPUT, Environment.CurrentDirectory);
             }
 
             proxyAddress = options.proxyAddress;
-            retryTimes = options.retry;
-            retryMaxSeconds = options.retry_max_seconds;
+            retryTimes = Math.Max(0, options.retry);
+            retryMaxSeconds = Math.Max(0, options.retry_max_seconds);
+            maxTaskCount = Math.Max(1, options.thread);
 
             for (int lod = minlod; lod <= maxlod; lod++)
             {
@@ -304,6 +307,11 @@ namespace TileDownloader
             Console.WriteLine($"下载完成：成功{keys.Count - failed.Count},失败:{failed.Count}");
         }
 
+        private static void OnDownloadFinished(Exception error)
+        {
+            Interlocked.Decrement(ref taskCount);
+        }
+
         private static void ReplaceSymbol(StringBuilder builder, Dictionary<string, string> symbols)
         {
             if (symbols == null)
@@ -315,7 +323,7 @@ namespace TileDownloader
                     string.IsNullOrEmpty(symbol.Value))
                     continue;
 
-                builder.Replace(symbol.Key, symbol.ToString());
+                builder.Replace(symbol.Key, symbol.Value);
             }
         }
 
@@ -363,7 +371,7 @@ namespace TileDownloader
                 if (!string.IsNullOrEmpty(proxyAddress))
                     argument.Append($"--proxy {proxyAddress} ");
 
-                argument.Append($"{address.ToString()}");
+                argument.Append($"\"{address.ToString()}\"");
 
                 Process curl = new Process();
                 curl.StartInfo.FileName = "curl";
@@ -378,17 +386,16 @@ namespace TileDownloader
                 {
                     failed.Add(key);
                 }
+
+                OnDownloadFinished(null);
             }
-            catch
+            catch (Exception exc)
             {
                 lock (failed)
                 {
                     failed.Add(key);
                 }
-            }
-            finally
-            {
-                Interlocked.Decrement(ref taskCount);
+                OnDownloadFinished(exc);
             }
         }
     }
