@@ -329,7 +329,7 @@ namespace TileDownloader
 
         private static string FindCurlFile()
         {
-            string curl = Environment.Is64BitProcess ? "curl\\x64\\curl.exe" : "curl\\x86\\curl.exe";
+            string curl = Environment.Is64BitProcess ? "curl\\bin_x64\\curl.exe" : "curl\\bin_x86\\curl.exe";
             return System.IO.Path.GetFullPath(curl);
         }
 
