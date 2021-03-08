@@ -41,6 +41,12 @@ namespace TileDownloader
 
         [Option("thread", HelpText = "worker thread count,default is 32", Default = 32)]
         public int thread { get; set; }
+
+        [Option("overwrite", HelpText = "over write file if is already exist", Default = false)]
+        public bool overwrite { get; set; }
+
+        [Option("detail", HelpText = "display detail info")]
+        public bool showDetail { get; set; }
     }
 
     [Verb("query", HelpText = "query tile info")]
@@ -77,6 +83,7 @@ namespace TileDownloader
         const string symbol_east = "{east}";
         const string symbol_center_lat = "{center_lat}";
         const string symbol_center_lon = "{center_lon}";
+        const string symbol_quad = "{quad}";
 
         const string DEFAULT_OUTPUT = @"{0}\Download\{z}\{x}\{y}.jpg";
 
@@ -89,6 +96,8 @@ namespace TileDownloader
         static string proxyAddress = null;
         static int retryTimes = 0;
         static int retryMaxSeconds = 30;
+        static bool overwrite = true;
+        static bool showDetail = false;
 
         static List<TileKey> failed = new List<TileKey>();
         static List<TileKey> keys = new List<TileKey>();
@@ -226,10 +235,44 @@ namespace TileDownloader
             Console.WriteLine(outputBuilder.ToString());
         }
 
+        private static void PrintOptions(LoadOptions options)
+        {
+            StringBuilder optionBuilder = new StringBuilder();
+            optionBuilder.AppendLine("Load Options:");
+
+            optionBuilder.Append("Bounds::".PadRight(20));
+            if (options.bound.Count() > 0)
+            {
+                var boundArr = options.bound.ToArray();
+                for (int i = 0; i < boundArr.Length; i++)
+                {
+                    optionBuilder.Append($"{boundArr[i].ToString("F4")} ");
+                }
+                optionBuilder.AppendLine();
+            }
+            else
+            {
+                optionBuilder.AppendLine("World");
+            }
+
+            optionBuilder.AppendLine($"{"Lod:",-20}[{options.minLod},{options.maxLod}]");
+            optionBuilder.AppendLine($"{"Url:",-20}{options.url}");
+            optionBuilder.AppendLine($"{"Output:",-20}{options.output}");
+            optionBuilder.AppendLine($"{"Proxy:",-20}{options.proxyAddress}");
+            optionBuilder.AppendLine($"{"Retry:",-20}{options.retry}");
+            optionBuilder.AppendLine($"{"RetryMaxSeconds:",-20}{options.retry_max_seconds}");
+            optionBuilder.AppendLine($"{"ThreadCount:",-20}{options.thread}");
+            optionBuilder.AppendLine($"{"Overwrite:",-20}{options.overwrite}");
+
+            Console.WriteLine(optionBuilder.ToString());
+        }
+
         private static void HandleDownload(LoadOptions options)
         {
             if (options == null)
                 throw new ArgumentNullException("options");
+
+            PrintOptions(options);
 
             double[] bounds = (options.bound == null || options.bound.Count() == 0) ? WorldBound : options.bound.ToArray();
             double south = bounds[0];   // 20.097
@@ -239,6 +282,9 @@ namespace TileDownloader
 
             int minlod = options.minLod;
             int maxlod = options.maxLod;
+
+            overwrite = options.overwrite;
+            showDetail = options.showDetail;
 
             url = options.url;
             output = options.output;
@@ -357,6 +403,7 @@ namespace TileDownloader
                 symbols[symbol_east] = east_.ToString();
                 symbols[symbol_center_lat] = center_lat.ToString();
                 symbols[symbol_center_lon] = center_lon.ToString();
+                symbols[symbol_quad] = TileKey.TileXYToQuadKey(key.X, key.Y, key.Lod);
 
                 StringBuilder address = new StringBuilder(url);
                 ReplaceSymbol(address, symbols);
@@ -369,31 +416,35 @@ namespace TileDownloader
                 if (!System.IO.Directory.Exists(dir))
                     System.IO.Directory.CreateDirectory(dir);
 
-                StringBuilder argument = new StringBuilder();
-                argument.Append($"--output {file} ");
-                argument.Append($"--retry {retryTimes} ");
-                argument.Append($"--retry-max-time {retryMaxSeconds} ");
-
-                if (!string.IsNullOrEmpty(proxyAddress))
-                    argument.Append($"--proxy {proxyAddress} ");
-
-                argument.Append($"\"{address.ToString()}\"");
-
-                Process curl = new Process();
-                curl.StartInfo.FileName = FindCurlFile();
-                curl.StartInfo.Arguments = argument.ToString();
-                curl.StartInfo.UseShellExecute = false;
-                curl.StartInfo.CreateNoWindow = true;
-                curl.Start();
-
-                await Task.Run(() => curl.WaitForExit());
-
-                if (curl.ExitCode != 0)
+                if (overwrite || !System.IO.File.Exists(file))
                 {
-                    failed.Add(key);
+                    StringBuilder argument = new StringBuilder();
+                    argument.Append($"--output {file} ");
+                    argument.Append($"--retry {retryTimes} ");
+                    argument.Append($"--retry-max-time {retryMaxSeconds} ");
+
+                    if (!string.IsNullOrEmpty(proxyAddress))
+                        argument.Append($"--proxy {proxyAddress} ");
+
+                    argument.Append($"\"{address.ToString()}\"");
+
+                    Process curl = new Process();
+                    curl.StartInfo.FileName = FindCurlFile();
+                    curl.StartInfo.Arguments = argument.ToString();
+                    curl.StartInfo.UseShellExecute = false;
+                    curl.StartInfo.CreateNoWindow = true;
+                    curl.Start();
+
+                    await Task.Run(() => curl.WaitForExit());
+
+                    if (curl.ExitCode != 0)
+                    {
+                        failed.Add(key);
+                    }
                 }
 
                 OnDownloadFinished(null);
+                await Task.FromResult(0);
             }
             catch (Exception exc)
             {
